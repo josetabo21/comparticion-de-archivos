@@ -1,0 +1,328 @@
+Imports System.Net.Sockets
+Imports System.Threading
+Imports System.IO
+Imports System.Text
+Imports System.Net
+
+Public Class Form1
+    Dim list As New TcpListener(14000)
+    Dim client As New TcpClient
+    Dim msg As String = ""
+    Dim mensaje As String
+    Dim cr As Boolean = False
+    Dim re As Boolean = False
+    Dim de As Boolean = False
+    Dim ch As Boolean = False
+    Dim code As String
+    Dim archcr As String
+    Dim Ipout As String = "169.254.186.111"
+    'Dim IPin As String = "169.254.186.111"
+    Dim PortE As Integer = 15000
+    Dim PortS As Integer = 11000
+    Dim cod As String
+    Dim newnamefile As String
+    Dim oldnamefile As String
+    Dim deleteFile As String
+    Dim modFile As String
+    Dim arch2 As String
+    Dim modifa As String
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim ListThead As New Thread(New ThreadStart(AddressOf Listenning))
+        list.Start()
+    End Sub
+
+    Private Sub Listenning()
+        list.Start()
+
+    End Sub
+
+
+
+    Private Sub FileSystemWatcher1_Changed(sender As Object, e As FileSystemEventArgs) Handles FileSystemWatcher1.Changed
+        modFile = e.FullPath
+
+        ch = True
+    End Sub
+
+    Private Sub FileSystemWatcher1_Created(sender As Object, e As FileSystemEventArgs) Handles FileSystemWatcher1.Created
+
+
+        cr = True
+
+    End Sub
+    Public Class FileInfoComparer
+        Implements IComparer
+
+        Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
+
+            Dim firstFile As New System.IO.FileInfo(x.ToString)
+            Dim secondFile As New System.IO.FileInfo(y.ToString)
+
+            Return DateTime.Compare(firstFile.LastWriteTime, secondFile.LastWriteTime)
+
+        End Function
+    End Class
+
+    Private Sub FileSystemWatcher1_Deleted(sender As Object, e As FileSystemEventArgs) Handles FileSystemWatcher1.Deleted
+
+
+        deleteFile = e.FullPath
+        de = True
+
+    End Sub
+
+    Private Sub FileSystemWatcher1_Renamed(sender As Object, e As RenamedEventArgs) Handles FileSystemWatcher1.Renamed
+        oldnamefile = e.OldFullPath
+
+        newnamefile = e.FullPath
+
+        re = True
+
+    End Sub
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        If list.Pending = True Then
+            msg = ""
+
+            client = list.AcceptTcpClient()
+
+            Dim Reader As New StreamReader(client.GetStream)
+
+            While Reader.Peek > -1
+                msg = msg + Convert.ToChar(Reader.Read()).ToString
+            End While
+
+            code = msg.Substring(0, 1)
+
+            If code = "1" Then
+                Dim split = msg.Split("\"c)(2)
+
+                For value As Integer = 0 To split.Length - 2
+                    archcr += split(value).ToString()
+                Next
+
+                Dim Path As String = "C:\PCD\" + archcr
+
+                ' Create or overwrite the file.
+                Dim fs As FileStream = File.Create(Path)
+                fs.Close()
+                archcr = ""
+            End If
+
+            If code = "2" Then
+
+
+                Dim split As String = msg.Split("\"c)(4)
+
+                Dim split1 As String = msg.Split("\"c)(2)
+
+                Dim split3 As String = split1.Split(".")(0)
+
+
+                For value As Integer = 0 To split.Length - 2
+                    archcr += split(value).ToString()
+                Next
+
+                For value As Integer = 0 To split3.Length - 1
+                    arch2 += split3(value).ToString()
+                Next
+
+
+
+                Dim Path1 As String = "C:\PCD\" + arch2 + ".txt"
+                Dim Path2 As String = "C:\PCD\" + archcr
+
+
+                If System.IO.File.Exists(Path1) = False Then
+                    Dim fs As FileStream = File.Create(Path2)
+                    fs.Close()
+                    archcr = ""
+                    arch2 = ""
+                Else
+
+                    My.Computer.FileSystem.RenameFile(Path1, archcr)
+                    arch2 = ""
+                    archcr = ""
+                End If
+
+            End If
+
+            If code = "3" Then
+
+
+                Dim split As String = msg.Split("\"c)(2)
+
+
+
+                For value As Integer = 0 To split.Length - 2
+                    archcr += split(value).ToString()
+                Next
+
+
+                Dim Path1 As String = "C:\PCD\" + archcr
+
+
+                If System.IO.File.Exists(Path1) = True Then
+
+                    File.Delete(Path1)
+
+
+                    archcr = ""
+
+                Else
+
+
+                End If
+
+            End If
+            If code = "4" Then
+
+
+                Dim split As String = msg.Split("\"c)(2)
+
+                Dim split1 As String = msg.Split("-"c)(3)
+
+                Dim split3 As String = split.Split("."c)(0)
+
+                For value As Integer = 0 To split3.Length - 1
+                    archcr += split3(value).ToString()
+                Next
+
+                For value As Integer = 0 To split1.Length - 1
+                    arch2 += split1(value).ToString()
+                Next
+
+
+                Dim Path1 As String = "C:\PCD\" + archcr + ".txt"
+
+
+
+                If System.IO.File.Exists(Path1) = True Then
+
+                    System.IO.File.WriteAllText(Path1, "")
+
+                    Dim modifa As System.IO.StreamWriter
+                    modifa = My.Computer.FileSystem.OpenTextFileWriter(Path1, True)
+                    modifa.WriteLine(arch2)
+                    modifa.Close()
+
+
+
+
+                    archcr = ""
+                    arch2 = ""
+
+
+                Else
+
+
+                End If
+
+            End If
+
+
+
+
+
+            RichTextBox1.AppendText(msg)
+        End If
+
+
+    End Sub
+    Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+        list.Stop()
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        client = New TcpClient("169.254.186.111", 12000)
+        Dim Writer As New StreamWriter(client.GetStream)
+        Dim tenmay As String = "@" & GetComputerName() & " say: "
+        Writer.Write(tenmay & TextBox2.Text & vbLf)
+        Writer.Flush()
+
+
+    End Sub
+    Public Function GetComputerName()
+        Dim pcname As String
+        pcname = System.Net.Dns.GetHostName
+        Return pcname
+    End Function
+
+    'Private Sub Timer4_Tick(sender As Object, e As EventArgs) Handles Timer4.Tick
+
+    '    If cr = True Then
+    '        Dim result As String
+    '        Dim files() As String = System.IO.Directory.GetFiles("C:\PCD")
+    '        System.Array.Sort(files, New FileInfoComparer)
+
+
+    '        result = files(files.Length - 1)
+
+    '        client = New TcpClient(Ipout, PortS)
+    '        Dim Writer As New StreamWriter(client.GetStream)
+    '        Dim tenmay As String = "@" & GetComputerName() & " say: Se ha creado "
+    '        Dim cod = 1
+    '        Writer.Write(cod & tenmay & result & vbLf)
+    '        Writer.Flush()
+    '        cr = False
+
+
+    '    End If
+
+    '    If re = True Then
+
+
+
+    '        client = New TcpClient(Ipout, PortS)
+    '        Dim Writer As New StreamWriter(client.GetStream)
+    '        Dim tenmay As String = "@" & GetComputerName() & " say: Se ha renombrado "
+    '        Dim cod = 2
+    '        Writer.Write(cod & tenmay & oldnamefile & " se ha cambiado a " & newnamefile & vbLf)
+    '        Writer.Flush()
+    '        re = False
+
+    '    End If
+
+
+    '    If de = True Then
+    '        client = New TcpClient(Ipout, PortS)
+    '        Dim Writer As New StreamWriter(client.GetStream)
+    '        Dim tenmay As String = "@" & GetComputerName() & " say: Se ha eliminado"
+    '        Dim cod = 3
+    '        Writer.Write(cod & tenmay & deleteFile & vbLf)
+    '        Writer.Flush()
+    '        de = False
+
+    '    End If
+
+
+    '    If ch = True Then
+
+    '        Try
+    '            ' Open the file using a stream reader.
+    '            Using sr As New StreamReader(modFile)
+    '                Dim line As String
+    '                ' Read the stream to a string and write the string to the console.
+    '                line = sr.ReadToEnd()
+    '                modifa = (line)
+    '            End Using
+    '        Catch ex As Exception
+    '            'Console.WriteLine("The file could not be read:")
+    '            'Console.WriteLine(ex.Message)
+    '        End Try
+
+
+    '        client = New TcpClient(Ipout, PortS)
+    '        Dim Writer As New StreamWriter(client.GetStream)
+    '        Dim tenmay As String = "@" & GetComputerName() & " say: Se ha modificado "
+    '        Dim cod = 4
+    '        Writer.Write(cod & tenmay & modFile & "---" & modifa & vbLf)
+    '        Writer.Flush()
+    '        ch = False
+
+    '    End If
+
+    '    'Timer4.Enabled = True
+
+    'End Sub
+End Class
